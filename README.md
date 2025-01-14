@@ -8,10 +8,10 @@ A Terminal based **Terraria** Character Editor.
 - Armor/Dyes/Accessories
 - Banks
 - Buffs
+- UI based inventory editing
+- Serialization auto saves changed data(currently to a test.plr file)
 
 ### Planned Feautures
-- Command based inventory editing
-  - `give Item x999 to inventory`
 - Hot reloading character by calling LoadPlayer from Terraria.exe
 
 ![Screenshot](image.png)

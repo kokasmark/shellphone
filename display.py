@@ -6,6 +6,8 @@ from art import *
 
 import re
 
+import parser
+
 color_map ="""                                                                                
                                                                                 
                                                                                 
@@ -53,14 +55,11 @@ class Display:
         self.term = Terminal()
 
     def visible_length(self,s):
-        # Strip ANSI escape sequences
         ansi_escape = re.compile(r'\033\[[0-9;]*m')
         return len(ansi_escape.sub('', s))
     
     def display_name(self,text):
-        # Insert space before capital letters (except the first one)
         result = re.sub(r'([a-z0-9])([A-Z])', r'\1 \2', text)
-        # Capitalize the first letter of each word and join them
         return result
 
     def find_player_files(self):
@@ -106,24 +105,21 @@ class Display:
     def print_instructions(self, content, x, y):
         box_width = 52
         padding = 2
-        content_width = box_width - 2 * padding - 2  # Subtracting borders and padding
+        content_width = box_width - 2 * padding - 2
         
-        content += ' ' * (content_width - self.visible_length(content))  # Pad content to fill the width
+        content += ' ' * (content_width - self.visible_length(content))
 
-        # Print the top border
         print(self.term.move(y - 3, x) + f"╭{'─' * (box_width - 2)}╮")
 
-        # Print the content with padding
         padded_content = f"{' ' * padding}{content}{' ' * padding}"
         print(self.term.move(y - 2, x) + f"│{padded_content}│")
 
-        # Print the bottom border
         print(self.term.move(y - 1, x) + f"╰{'─' * (box_width - 2)}╯")
         
     def render(self, parsed_data):
         print(self.term.clear())
-        current_item_index = 0  # Index for the scrollable items
-        items_per_page = len(self.character) - 15  # Number of items visible in the box at one time
+        current_item_index = 0
+        items_per_page = len(self.character) - 15
 
         items = ["inventory","armor","bank","dye","miscEquips","miscDyes"]
         item_colors = [CBLUE,CGREY,CVIOLET2,CRED2,CYELLOW2,CBEIGE2]
@@ -139,7 +135,6 @@ class Display:
                         color = {"r": 255, "g": 255, "b": 255}
                     r, g, b = color['r'], color['g'], color['b']
                     print(self.term.move(i, ii) + self.term.color_rgb(r, g, b) + c + self.term.normal)
-            # Render small info box
             info_box_x = len(self.character[0]) + 2
             current_y = 2
             print(self.term.move(current_y, info_box_x) + f"╭─ Stats {'─' * 42}╮")
@@ -158,26 +153,22 @@ class Display:
             print(self.term.move(current_y + 4, info_box_x) + f"│ {mana_text} │")
             print(self.term.move(current_y + 5, info_box_x) + f"╰{'─' * 50}╯")
 
-            buffs_box_width = 50  # Same width as info box
-            current_y += 7  # Adding 7 to account for space between the stats and buffs section
+            buffs_box_width = 50 
+            current_y += 7
             print(self.term.move(current_y, info_box_x) + f"╭─ Buffs {'─' * (buffs_box_width - 8)}╮")
             current_y += 1
 
-            # Print Buffs dynamically, and adjust `current_y`
             for buff in parsed_data["buffs"]:
                 buff_text = f"{self.display_name(buff.name)} - {buff.time}s"
                 padding = buffs_box_width - 2 - self.visible_length(buff_text)
                 buff_text = f"{buff_text}{' ' * padding}"
                 print(self.term.move(current_y, info_box_x) + f"│ {buff_text} │")
-                current_y += 1  # Increment `current_y` for each buff
+                current_y += 1
 
-            # Print the bottom border of the Buffs Box
             print(self.term.move(current_y, info_box_x) + f"╰{'─' * (buffs_box_width)}╯")
 
-            # Now, `current_y` is updated after buffs and will be used for the instructions
-            instructions = f"{CBLUE2}↑/↓{CEND} Scroll | {CBLUE2}←/→{CEND} Select | {CBLUE2}Q{CEND} Quit"
+            instructions = f"{CBLUE2}↑/↓{CEND} Scroll | {CBLUE2}←/→{CEND} Select | {CBLUE2}Q{CEND} Quit| {CBLUE2}abc{CEND} Search"
             self.print_instructions(instructions, info_box_x, current_y + 2+items_per_page+6)
-            # Render items box
             while True:
                 selected_items = items[selected_item]
                 color = item_colors[selected_item]
@@ -218,5 +209,110 @@ class Display:
                 elif key.code == self.term.KEY_RIGHT and selected_item < len(items)-1:
                     current_item_index = 0
                     selected_item += 1
+                if key == '\r':
+                    item = parsed_data[selected_items][current_item_index]
+                    
+                    prefix_input = self.get_prefix_from_suggestions("prefix", list(parser.prefixToid.keys()), 
+                                                                   item.prefix_name, items_box_y, items_box_x, parsed_data,selected_items,current_item_index,
+                                                                   color)
+                    item.Prefix(parser.prefixToid[prefix_input])
+
+                    name_input = self.get_name_from_suggestions("name", list(parser.itemToid.keys()), item.name, items_box_y, items_box_x, parsed_data,selected_items,current_item_index,
+                                                                   color)
+                    item.netDefaults(parser.itemToid[name_input])
+
+                    stack_input = self.get_stack(items_box_y, items_box_x, parsed_data,selected_items,current_item_index,
+                                                                   color)
+                    item.stack = stack_input
                 elif key == 'q':
                     break
+
+    def get_prefix_from_suggestions(self, field, suggestions, current_value, items_box_y, items_box_x,parsed_data,selected_items,current_item_index,
+                                                                   color):
+        item = parsed_data[selected_items][current_item_index]
+        suggestion_index = 0
+        typed_input = item.prefix_name
+
+        while True:
+            filtered_suggestions = [sug for sug in suggestions if typed_input.lower() in sug.lower()]
+
+            if not filtered_suggestions:
+                filtered_suggestions = ["No matches found"]
+
+            item_text = f"{CBLINK2}{self.display_name(filtered_suggestions[suggestion_index])+' ' if filtered_suggestions[suggestion_index] != '' else ''}{CEND}{color}{self.display_name(item.name)} x{item.stack}{CEND}"
+            padding = 48 - self.visible_length(item_text)
+            item_text = f"{item_text}{' ' * padding}"
+
+            
+            print(self.term.move(items_box_y - 1, items_box_x) + " "*50)
+            print(self.term.move(items_box_y - 1, items_box_x) + f'{color}{"🔎"}{CEND} {typed_input}')
+            print(self.term.move(items_box_y + 1, items_box_x) + f"{color}│{CEND} {item_text} {color}│{CEND}")
+
+
+            key = self.term.inkey()
+
+            if key.code == self.term.KEY_RIGHT:
+                suggestion_index = (suggestion_index + 1) % len(filtered_suggestions)
+            elif key.code == self.term.KEY_LEFT:
+                suggestion_index = (suggestion_index - 1) % len(filtered_suggestions)
+            elif key == '\r':
+                return filtered_suggestions[suggestion_index]
+            elif key == '\x7f':
+                typed_input = typed_input[:-1]
+            else:
+                typed_input += str(key)
+            print(self.term.move(items_box_y + 1, items_box_x) + ' ' * 50)
+            
+    def get_name_from_suggestions(self, field, suggestions, current_value, items_box_y, items_box_x,parsed_data,selected_items,current_item_index,
+                                                                   color):
+        item = parsed_data[selected_items][current_item_index]
+        suggestion_index = 0
+        typed_input = item.name
+
+        while True:
+            filtered_suggestions = [sug for sug in suggestions if typed_input.lower() in sug.lower()]
+            if not filtered_suggestions:
+                filtered_suggestions = ["No matches found"]
+            item_text = f"{color}{self.display_name(item.prefix_name)+' ' if item.prefix_name != '' else ''}{CBLINK2}{self.display_name(self.display_name(filtered_suggestions[suggestion_index]))}{CEND}{color} x{item.stack}{CEND}"
+            padding = 48 - self.visible_length(item_text)
+            item_text = f"{item_text}{' ' * padding}"
+
+            print(self.term.move(items_box_y - 1, items_box_x) + " "*50)
+            print(self.term.move(items_box_y - 1, items_box_x) + f'{color}{"🔎"}{CEND} {typed_input}')
+            print(self.term.move(items_box_y + 1, items_box_x) + f"{color}│{CEND} {item_text} {color}│{CEND}")
+            
+            key = self.term.inkey()
+
+            if key.code == self.term.KEY_RIGHT:
+                suggestion_index = (suggestion_index + 1) % len(filtered_suggestions)
+            elif key.code == self.term.KEY_LEFT:
+                suggestion_index = (suggestion_index - 1) % len(filtered_suggestions)
+            elif key == '\r':
+                return filtered_suggestions[suggestion_index]
+            elif key == '\x7f':
+                typed_input = typed_input[:-1]
+            else:
+                typed_input += str(key)
+
+            print(self.term.move(items_box_y + 1, items_box_x) + ' ' * 50)
+
+
+    def get_stack(self, items_box_y, items_box_x,parsed_data,selected_items,current_item_index,
+                                                                   color):
+        item = parsed_data[selected_items][current_item_index]
+        stack = item.stack
+        while True:
+            item_text = f"{color}{self.display_name(item.prefix_name)+' ' if item.prefix_name != ''else ''}{self.display_name(item.name)} x{CBLINK2}{stack}{CEND}"
+            padding = 48 - self.visible_length(item_text)
+            item_text = f"{item_text}{' ' * padding}"
+            print(self.term.move(items_box_y - 1, items_box_x) + " "*50)
+            print(self.term.move(items_box_y + 1, items_box_x) + f"{color}│{CEND} {item_text} {color}│{CEND}")
+            key = self.term.inkey()
+
+            if key.code == self.term.KEY_RIGHT:
+                stack += 1
+            elif key.code == self.term.KEY_LEFT:
+                stack = max(0, stack-1)
+            elif key == '\r':
+                return stack
+                
