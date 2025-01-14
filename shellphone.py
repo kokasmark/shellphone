@@ -29,7 +29,7 @@ def encrypt_file(path, data,encryption_key="h3y_gUyZ"):
     cipher = AES.new(key, AES.MODE_CBC, iv=key)
     encrypted_data = cipher.encrypt(pad(data, AES.block_size))
 
-    with open(path.replace(".plr","")+"_edited.plr","wb") as f:
+    with open(path,"wb") as f:
         f.write(encrypted_data)
 
 if __name__ == "__main__":

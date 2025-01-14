@@ -8,6 +8,10 @@ import re
 
 import parser
 
+from PIL import Image
+
+import random
+
 color_map ="""                                                                                
                                                                                 
                                                                                 
@@ -53,6 +57,7 @@ class Display:
         self.character = character.splitlines()
         self.color_map = color_map.splitlines()
         self.term = Terminal()
+        self.sprite_atlas = Image.open("./images/items.png")
 
     def visible_length(self,s):
         ansi_escape = re.compile(r'\033\[[0-9;]*m')
@@ -71,8 +76,8 @@ class Display:
             print("Terraria player folder not found!")
             return []
 
-        return [os.path.join(terraria_player_folder, f) for f in os.listdir(terraria_player_folder) if f.endswith(".plr")] + [
-                os.path.join(tmodloader_player_folder, f) for f in os.listdir(tmodloader_player_folder) if f.endswith(".plr")
+        return [os.path.join(terraria_player_folder, f) for f in os.listdir(terraria_player_folder) if f.endswith(".plr") or f.endswith(".bak")] + [
+                os.path.join(tmodloader_player_folder, f) for f in os.listdir(tmodloader_player_folder) if f.endswith(".plr") or f.endswith(".bak")
             ]
 
     def render_select_player(self):
@@ -90,7 +95,7 @@ class Display:
                 for i, file in enumerate(player_files):
                     file_name = os.path.basename(file)
                     if i == index:
-                        print(self.term.move(5+i,45) + self.term.reverse(f"> {file_name}"))
+                        print(self.term.move(5+i,45) + self.term.reverse(f"> {file_name}{CRED2}{' This file is a backup file do not edit it if not needed!' if file_name.endswith('.bak') else ''}{CEND}"))
                     else:
                         print(self.term.move(5+i,45) + f"  {file_name}")
 
@@ -134,7 +139,7 @@ class Display:
                     else:
                         color = {"r": 255, "g": 255, "b": 255}
                     r, g, b = color['r'], color['g'], color['b']
-                    print(self.term.move(i, ii) + self.term.color_rgb(r, g, b) + c + self.term.normal)
+                    print(self.term.move(i+3, ii) + self.term.color_rgb(r,g,b) + c + self.term.normal)
             info_box_x = len(self.character[0]) + 2
             current_y = 2
             print(self.term.move(current_y, info_box_x) + f"╭─ Stats {'─' * 42}╮")
@@ -152,7 +157,7 @@ class Display:
             mana_text = f"{mana_text}{' ' * padding}"
             print(self.term.move(current_y + 4, info_box_x) + f"│ {mana_text} │")
             print(self.term.move(current_y + 5, info_box_x) + f"╰{'─' * 50}╯")
-
+            
             buffs_box_width = 50 
             current_y += 7
             print(self.term.move(current_y, info_box_x) + f"╭─ Buffs {'─' * (buffs_box_width - 8)}╮")
@@ -199,6 +204,12 @@ class Display:
                         item_text = f"{item_text}{' ' * padding}"
                     print(self.term.move(items_box_y + i + 1, items_box_x) + f"{color}│{CEND} {item_text} {color}│{CEND}")
                 print(self.term.move(items_box_y + items_per_page + 1, items_box_x) + f"{color}╰{'─' * 50}╯{CEND}")
+
+                curent_item = parsed_data[selected_items][current_item_index]
+
+                print(self.term.move(items_box_y, items_box_x+59) + f"{color}╭─ {self.display_name(curent_item.name)} {'─' * (40-len(self.display_name(curent_item.name))-3)}╮{color}")
+                self.display_sprite(curent_item.netID,items_box_x+60,items_box_y+1,color)
+                print(self.term.move(items_box_y+20, items_box_x+59) + f"{color}╰{'─' * 40}╯{CEND}")
 
                 key = self.term.inkey(timeout=None)
                 if key.code == self.term.KEY_UP and current_item_index > 0:
@@ -300,7 +311,6 @@ class Display:
 
             print(self.term.move(items_box_y + 1, items_box_x) + ' ' * 50)
 
-
     def get_stack(self, items_box_y, items_box_x,parsed_data,selected_items,current_item_index,
                                                                    color):
         item = parsed_data[selected_items][current_item_index]
@@ -319,4 +329,35 @@ class Display:
                 stack = max(0, stack-1)
             elif key == '\r':
                 return stack
-                
+
+    def display_sprite(self, sprite_id, x, y, color,scale=1):
+        sprite_width = 40
+        sprite_height = 40
+
+        atlas_width, atlas_height = self.sprite_atlas.size
+        sprites_per_row = atlas_width // sprite_width
+        col = sprite_id % sprites_per_row
+        row = sprite_id // sprites_per_row
+        sprite = self.sprite_atlas.crop((col * sprite_width, row * sprite_height, (col + 1) * sprite_width, (row + 1) * sprite_height))
+
+        sprite = sprite.resize((int(sprite_width * scale), int(sprite_height * scale*0.5)), Image.ANTIALIAS)
+
+        grayscale_sprite = sprite.convert("L")
+        ascii_art = []
+        for py in range(grayscale_sprite.height):
+            line = []
+            for px in range(grayscale_sprite.width):
+                pixel_value = grayscale_sprite.getpixel((px, py))
+                pixel_color = sprite.getpixel((px, py))
+                char = "█" + self.term.color_rgb(pixel_color[0],pixel_color[1],pixel_color[2]) if pixel_value * 10 // 256 != 0 else " "
+
+                line.append((char))
+            ascii_art.append(line)
+        for row_idx, row in enumerate(ascii_art):
+            for col_idx, char in enumerate(row):
+                if col_idx == 0:
+                    print(self.term.move(y + row_idx, x + col_idx-1) + color+"│"+CEND)
+                if col_idx == 39:
+                    print(self.term.move(y + row_idx, x + col_idx+1) + color+"│"+CEND)
+                print(self.term.move(y + row_idx, x + col_idx) + char)
+               
