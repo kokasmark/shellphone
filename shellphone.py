@@ -19,7 +19,7 @@ def decrypt_file(path, encryption_key="h3y_gUyZ"):
     decrypted_data = cipher.decrypt(encrypted_data)
     return decrypted_data
 
-def encrypt_file(data, encryption_key="h3y_gUyZ"):
+def encrypt_file(path, data,encryption_key="h3y_gUyZ"):
 
     key = encryption_key.encode("utf-16le")
 
@@ -29,7 +29,8 @@ def encrypt_file(data, encryption_key="h3y_gUyZ"):
     cipher = AES.new(key, AES.MODE_CBC, iv=key)
     encrypted_data = cipher.encrypt(pad(data, AES.block_size))
 
-    return encrypted_data
+    with open(path.replace(".plr","")+"_edited.plr","wb") as f:
+        f.write(encrypted_data)
 
 display = Display()
 while True:
@@ -39,13 +40,13 @@ while True:
     parser = PlayerParser(decrypted_data)
     deserialized = parser.deserialize()
 
-    display.render(deserialized)
+    save = display.render(deserialized)
 
-    serilalized = parser.serialize(deserialized)
+    if save:
+        serilalized = parser.serialize(deserialized)
 
-    encrypted_file = encrypt_file(serilalized)
+        encrypted_file = encrypt_file(selected_file,serilalized)
 
-    with open("test.plr","wb") as f:
-        f.write(encrypted_file)
+    
 
 

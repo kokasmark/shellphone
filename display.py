@@ -103,18 +103,18 @@ class Display:
                     return player_files[index]
 
     def print_instructions(self, content, x, y):
-        box_width = 52
+        box_width = 62
         padding = 2
         content_width = box_width - 2 * padding - 2
         
         content += ' ' * (content_width - self.visible_length(content))
 
-        print(self.term.move(y - 3, x) + f"╭{'─' * (box_width - 2)}╮")
+        print(self.term.move(y - 3, x-5) + f"╭{'─' * (box_width - 2)}╮")
 
         padded_content = f"{' ' * padding}{content}{' ' * padding}"
-        print(self.term.move(y - 2, x) + f"│{padded_content}│")
+        print(self.term.move(y - 2, x-5) + f"│{padded_content}│")
 
-        print(self.term.move(y - 1, x) + f"╰{'─' * (box_width - 2)}╯")
+        print(self.term.move(y - 1, x-5) + f"╰{'─' * (box_width - 2)}╯")
         
     def render(self, parsed_data):
         print(self.term.clear())
@@ -167,7 +167,7 @@ class Display:
 
             print(self.term.move(current_y, info_box_x) + f"╰{'─' * (buffs_box_width)}╯")
 
-            instructions = f"{CBLUE2}↑/↓{CEND} Scroll | {CBLUE2}←/→{CEND} Select | {CBLUE2}Q{CEND} Quit| {CBLUE2}abc{CEND} Search"
+            instructions = f"{CBLUE2}↑/↓{CEND} Scroll | {CBLUE2}←/→{CEND} Select | {CBLUE2}abc{CEND} Search | {CBLUE2}Q{CEND} Quit | {CBLUE2}S{CEND} Save"
             self.print_instructions(instructions, info_box_x, current_y + 2+items_per_page+6)
             while True:
                 selected_items = items[selected_item]
@@ -224,8 +224,10 @@ class Display:
                     stack_input = self.get_stack(items_box_y, items_box_x, parsed_data,selected_items,current_item_index,
                                                                    color)
                     item.stack = stack_input
+                elif key == 's':
+                    return True
                 elif key == 'q':
-                    break
+                    return False
 
     def get_prefix_from_suggestions(self, field, suggestions, current_value, items_box_y, items_box_x,parsed_data,selected_items,current_item_index,
                                                                    color):

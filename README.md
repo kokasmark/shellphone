@@ -9,7 +9,7 @@ A Terminal based **Terraria** Character Editor.
 - Banks
 - Buffs
 - UI based inventory editing
-- Serialization auto saves changed data(currently to a test.plr file)
+- Serialization auto saves changed data(currently not working)
 
 ### Planned Feautures
 - Hot reloading character(if possible, i will see)
