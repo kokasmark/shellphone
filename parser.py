@@ -115,7 +115,6 @@ class Item:
         pass
 
     def RollAPrefix(self, unifiedRandom, num):
-        # Simulate prefix rolling logic, return True or False
         return random.choice([True, False])
     
     
@@ -174,15 +173,15 @@ class Item:
 
         num9 *= num9
         self.value = round(self.value * num9)
-        self.prefix = num
 
         self.color = ItemRarity.get_color_by_rarity(self.rare)
         return self.rare
 
 class Buff:
-    type = 0
+    type = -1
     name = "None"
-    time = 0
+    time = -1
+    readable_time = ""
     def __init__(self):
         pass
     
@@ -195,9 +194,18 @@ class Buff:
         pass
 
     def set_time(self,time):
-        time = time
+        self.time = time
+        self.readable_time = self.parse_time(time)
         pass
 
+    def parse_time(self, ticks):
+        total_seconds = ticks / 60
+
+        minutes = int(total_seconds // 60)
+        seconds = int(total_seconds % 60)
+
+        return f"{minutes}:{seconds:{0}<2}"
+    
 class PlayerParser:
     def __init__(self, data):
         self.data = data
@@ -259,6 +267,7 @@ class PlayerParser:
         seconds = int(total_seconds % 60)
 
         return f"{hours}:{minutes}:{seconds}"
+    
     def skip_bytes(self, length):
         self.offset += length
 
@@ -304,7 +313,6 @@ class PlayerParser:
         return result
 
     def serialize_playtime(self, playtime_str):
-        # Parse playtime string (e.g., "5:23:45")
         hours, minutes, seconds = map(int, playtime_str.split(':'))
         total_seconds = (hours * 3600) + (minutes * 60) + seconds
         playTime_ticks = int(total_seconds * 10_000_000)
@@ -465,6 +473,7 @@ class PlayerParser:
             if release >= 199:
                 data["voidVaultInfo"] = self.read_uint8()
 
+       
         if release >= 11:
             num27 = 22
             if release < 74:
@@ -472,34 +481,29 @@ class PlayerParser:
             if release >= 252:
                 num27 = 44
 
-            data["buffs"] = []
-            for num28 in range(num27):
-                buff = Buff()
-                buff.set_type(self.read_int32())
-                buff.set_time(self.read_int32())
+            data["buffs"] = [Buff() for _ in range(num27)]
 
-                if buff.type == 0:
-                    num28 -= 1
-                    num27 -= 1
-                else:
-                    data["buffs"].append(buff)
+            num28 = 0
+            while num28 < num27:
+                data["buffs"][num28].set_type(self.read_int32())
+                data["buffs"][num28].set_time(self.read_int32())
+                num28 += 1
+
+
 
         self.parsed_bytes = self.offset
         return data
     
     def serialize(self, data):
-        # Start with an empty byte array
         serialized_data = bytearray()
 
-        # Write version
         serialized_data.extend(self.write_int32(data["version"]))
         release = data["version"]
 
-        # Write other fields in the same order they were read
         serialized_data.extend(self.write_string(data["magicNumber"],7))
         serialized_data.extend(self.write_uint8(data["fileType"]))
         serialized_data.extend(self.write_uint32(data["revision"]))
-        serialized_data.extend(self.write_bytes(data["metaData"],7))  # Skipped bytes
+        serialized_data.extend(self.write_bytes(data["metaData"],7))
         serialized_data.extend(self.write_boolean(data["favorite"]))
 
         serialized_data.extend(self.write_string(data["name"]))
@@ -520,7 +524,6 @@ class PlayerParser:
         serialized_data.extend(self.write_boolean(data["unlockedBiomeTorches"]))
         serialized_data.extend(self.write_boolean(data["unsingBiomeTorches"]))
 
-        # Handle optional fields based on release version
         if release >= 256:
             serialized_data.extend(self.write_boolean(data.get("ateArtisanBread", False)))
         if release >= 260:
@@ -539,7 +542,6 @@ class PlayerParser:
             serialized_data.extend(self.write_int32(data.get("numberOfDeathsPVE", 0)))
             serialized_data.extend(self.write_int32(data.get("numberOfDeathsPVP", 0)))
 
-        # Serialize colors
         serialized_data.extend(self.write_rgb(data["hairColor"]))
         serialized_data.extend(self.write_rgb(data["skinColor"]))
         serialized_data.extend(self.write_rgb(data["eyeColor"]))
@@ -548,7 +550,6 @@ class PlayerParser:
         serialized_data.extend(self.write_rgb(data["pantsColor"]))
         serialized_data.extend(self.write_rgb(data["shoeColor"]))
 
-        # Serialize items
         for item in data["armor"]:
             serialized_data.extend(self.write_int32(item.netID))
             serialized_data.extend(self.write_uint8(item.prefix))
@@ -564,7 +565,6 @@ class PlayerParser:
             if hasattr(item, "favorited") and item.favorited is not None:
                 serialized_data.extend(self.write_boolean(item.favorited))
 
-        # Miscellaneous equips and dyes
         for item in data["miscEquips"]:
             serialized_data.extend(self.write_int32(item.netID))
             serialized_data.extend(self.write_uint8(item.prefix))
@@ -586,7 +586,7 @@ class PlayerParser:
 
         if "buffs" in data:
             for buff in data["buffs"]:
-                if buff.name != "Unknown":
+                if buff.type >= 0:
                     serialized_data.extend(self.write_int32(buff.type))
                     serialized_data.extend(self.write_int32(buff.time))
 

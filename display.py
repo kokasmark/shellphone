@@ -159,7 +159,9 @@ class Display:
             current_y += 1
 
             for buff in parsed_data["buffs"]:
-                buff_text = f"{self.display_name(buff.name)} - {buff.time}s"
+                if buff.type == 0:
+                    continue
+                buff_text = f"{self.display_name(buff.name)} - {buff.readable_time}"
                 padding = buffs_box_width - 2 - self.visible_length(buff_text)
                 buff_text = f"{buff_text}{' ' * padding}"
                 print(self.term.move(current_y, info_box_x) + f"│ {buff_text} │")

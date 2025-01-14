@@ -32,20 +32,21 @@ def encrypt_file(path, data,encryption_key="h3y_gUyZ"):
     with open(path.replace(".plr","")+"_edited.plr","wb") as f:
         f.write(encrypted_data)
 
-display = Display()
-while True:
-    selected_file = display.render_select_player()
-    decrypted_data = decrypt_file(selected_file)
+if __name__ == "__main__":
+    display = Display()
+    while True:
+        selected_file = display.render_select_player()
+        decrypted_data = decrypt_file(selected_file)
 
-    parser = PlayerParser(decrypted_data)
-    deserialized = parser.deserialize()
+        parser = PlayerParser(decrypted_data)
+        deserialized = parser.deserialize()
 
-    save = display.render(deserialized)
+        save = display.render(deserialized)
 
-    if save:
-        serilalized = parser.serialize(deserialized)
+        if save:
+            serilalized = parser.serialize(deserialized)
 
-        encrypted_file = encrypt_file(selected_file,serilalized)
+            encrypted_file = encrypt_file(selected_file,serilalized)
 
     
 
