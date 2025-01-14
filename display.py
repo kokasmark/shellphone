@@ -334,7 +334,7 @@ class Display:
             elif key == '\r':
                 return stack
 
-    def display_sprite(self, sprite_id, x, y, color,scale=1):
+    def prepare_sprite(self,sprite_id):
         sprite_width = 40
         sprite_height = 40
 
@@ -343,25 +343,24 @@ class Display:
         col = sprite_id % sprites_per_row
         row = sprite_id // sprites_per_row
         sprite = self.sprite_atlas.crop((col * sprite_width, row * sprite_height, (col + 1) * sprite_width, (row + 1) * sprite_height))
-
-        sprite = sprite.resize((int(sprite_width * scale), int(sprite_height * scale*0.5)), Image.ANTIALIAS)
-
+        return sprite.resize((int(sprite_width), int(sprite_height *0.5)), Image.ANTIALIAS)
+    
+    def display_sprite(self, sprite_id, x, y, color):
+        sprite = self.prepare_sprite(sprite_id)
         grayscale_sprite = sprite.convert("L")
         ascii_art = []
+
         for py in range(grayscale_sprite.height):
-            line = []
+            line = f"{self.term.move(y + py, x - 1)}{color}│{CEND}"
             for px in range(grayscale_sprite.width):
                 pixel_value = grayscale_sprite.getpixel((px, py))
                 pixel_color = sprite.getpixel((px, py))
-                char = "█" + self.term.color_rgb(pixel_color[0],pixel_color[1],pixel_color[2]) if pixel_value * 10 // 256 != 0 else " "
-
-                line.append((char))
+                char = "█" + self.term.color_rgb(pixel_color[0], pixel_color[1], pixel_color[2]) if pixel_value * 10 // 256 != 0 else " "
+                line += char
+            line += f"{color}│{CEND}"
             ascii_art.append(line)
-        for row_idx, row in enumerate(ascii_art):
-            for col_idx, char in enumerate(row):
-                if col_idx == 0:
-                    print(self.term.move(y + row_idx, x + col_idx-1) + color+"│"+CEND)
-                if col_idx == 39:
-                    print(self.term.move(y + row_idx, x + col_idx+1) + color+"│"+CEND)
-                print(self.term.move(y + row_idx, x + col_idx) + char)
+
+        for row in ascii_art:
+            print(row)
+
                

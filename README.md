@@ -9,8 +9,8 @@ A Terminal based **Terraria** Character Editor.
 - Banks
 - Buffs
 - UI based inventory editing
-- Serialization auto saves changed data(currently not working)
-- Ascii art image of the selected item(slows it down a little bit)
+- Serialization saves changed data
+- Ascii art image of the selected item
 
 ### Planned Feautures
 - Hot reloading character(if possible, i will see)
