@@ -215,11 +215,11 @@ class Display:
                     prefix_input = self.get_prefix_from_suggestions("prefix", list(parser.prefixToid.keys()), 
                                                                    item.prefix_name, items_box_y, items_box_x, parsed_data,selected_items,current_item_index,
                                                                    color)
-                    item.Prefix(parser.prefixToid[prefix_input])
+                    item.Prefix(parser.prefixToid.get(prefix_input,0))
 
                     name_input = self.get_name_from_suggestions("name", list(parser.itemToid.keys()), item.name, items_box_y, items_box_x, parsed_data,selected_items,current_item_index,
                                                                    color)
-                    item.netDefaults(parser.itemToid[name_input])
+                    item.netDefaults(parser.itemToid.get(name_input,0))
 
                     stack_input = self.get_stack(items_box_y, items_box_x, parsed_data,selected_items,current_item_index,
                                                                    color)
@@ -237,7 +237,7 @@ class Display:
             filtered_suggestions = [sug for sug in suggestions if typed_input.lower() in sug.lower()]
 
             if not filtered_suggestions:
-                filtered_suggestions = ["No matches found"]
+                filtered_suggestions = [""]
 
             item_text = f"{CBLINK2}{self.display_name(filtered_suggestions[suggestion_index])+' ' if filtered_suggestions[suggestion_index] != '' else ''}{CEND}{color}{self.display_name(item.name)} x{item.stack}{CEND}"
             padding = 48 - self.visible_length(item_text)
@@ -272,7 +272,7 @@ class Display:
         while True:
             filtered_suggestions = [sug for sug in suggestions if typed_input.lower() in sug.lower()]
             if not filtered_suggestions:
-                filtered_suggestions = ["No matches found"]
+                filtered_suggestions = [""]
             item_text = f"{color}{self.display_name(item.prefix_name)+' ' if item.prefix_name != '' else ''}{CBLINK2}{self.display_name(self.display_name(filtered_suggestions[suggestion_index]))}{CEND}{color} x{item.stack}{CEND}"
             padding = 48 - self.visible_length(item_text)
             item_text = f"{item_text}{' ' * padding}"
