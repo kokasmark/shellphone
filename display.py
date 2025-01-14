@@ -58,6 +58,7 @@ class Display:
         self.color_map = color_map.splitlines()
         self.term = Terminal()
         self.sprite_atlas = Image.open("./images/items.png")
+        self.render_image = True
 
     def visible_length(self,s):
         ansi_escape = re.compile(r'\033\[[0-9;]*m')
@@ -108,7 +109,7 @@ class Display:
                     return player_files[index]
 
     def print_instructions(self, content, x, y):
-        box_width = 62
+        box_width = self.visible_length(content)+6
         padding = 2
         content_width = box_width - 2 * padding - 2
         
@@ -174,8 +175,8 @@ class Display:
 
             print(self.term.move(current_y, info_box_x) + f"╰{'─' * (buffs_box_width)}╯")
 
-            instructions = f"{CBLUE2}↑/↓{CEND} Scroll | {CBLUE2}←/→{CEND} Select | {CBLUE2}abc{CEND} Search | {CBLUE2}Q{CEND} Quit | {CBLUE2}S{CEND} Save"
-            self.print_instructions(instructions, info_box_x, current_y + 2+items_per_page+6)
+            instructions = f"{CBLUE2}↑/↓{CEND} Scroll | {CBLUE2}←/→{CEND} Select | {CBLUE2}I{CEND} Item preview | {CBLUE2}abc{CEND} Search | {CBLUE2}Q{CEND} Quit | {CBLUE2}S{CEND} Save"
+            self.print_instructions(instructions, info_box_x+5, current_y + 2+items_per_page+6)
             while True:
                 selected_items = items[selected_item]
                 color = item_colors[selected_item]
@@ -184,7 +185,7 @@ class Display:
                 items_box_y = current_y+2
 
                 for i in range(items_per_page + 2):
-                    print(self.term.move(items_box_y + i, items_box_x) + " " * 52)
+                    print(self.term.move(items_box_y + i, items_box_x) + " " * 102)
 
                 print(self.term.move(items_box_y, items_box_x) + f"{color}╭─ {selected_items.capitalize()} {'─' * (50-len(selected_items)-3)}╮{color}")
                 for i in range(items_per_page):
@@ -207,14 +208,15 @@ class Display:
 
                 curent_item = parsed_data[selected_items][current_item_index]
 
-                print(self.term.move(items_box_y, items_box_x+59) + f"{color}╭─ {self.display_name(curent_item.name)} {'─' * (40-len(self.display_name(curent_item.name))-3)}╮{color}")
-                self.display_sprite(curent_item.netID,items_box_x+60,items_box_y+1,color)
-                print(self.term.move(items_box_y+20, items_box_x+59) + f"{color}╰{'─' * 40}╯{CEND}")
+                if self.render_image:
+                    print(self.term.move(items_box_y, items_box_x+59-5) + f"{color}╭─ {self.display_name(curent_item.name)} {'─' * (40-len(self.display_name(curent_item.name))-3)}╮{color}")
+                    self.display_sprite(curent_item.netID,items_box_x+60-5,items_box_y+1,color)
+                    print(self.term.move(items_box_y+20, items_box_x+59-5) + f"{color}╰{'─' * 40}╯{CEND}")
 
                 key = self.term.inkey(timeout=None)
                 if key.code == self.term.KEY_UP and current_item_index > 0:
                     current_item_index -= 1
-                elif key.code == self.term.KEY_DOWN and current_item_index + items_per_page < len(parsed_data[selected_items])-1:
+                elif key.code == self.term.KEY_DOWN and current_item_index < len(parsed_data[selected_items])-1:
                     current_item_index += 1
                 if key.code == self.term.KEY_LEFT and selected_item > 0:
                     current_item_index = 0
@@ -237,6 +239,8 @@ class Display:
                     stack_input = self.get_stack(items_box_y, items_box_x, parsed_data,selected_items,current_item_index,
                                                                    color)
                     item.stack = stack_input
+                elif key == 'i':
+                    self.render_image = not self.render_image
                 elif key == 's':
                     return True
                 elif key == 'q':
