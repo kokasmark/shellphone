@@ -12,7 +12,7 @@ A Terminal based **Terraria** Character Editor.
 - Serialization auto saves changed data(currently to a test.plr file)
 
 ### Planned Feautures
-- Hot reloading character by calling LoadPlayer from Terraria.exe
+- Hot reloading character(if possible, i will see)
 
 ![Screenshot](image2.png)
 ![Screenshot](image1.png)
