@@ -86,13 +86,13 @@ class Display:
         with self.term.fullscreen(), self.term.cbreak(), self.term.hidden_cursor():
             while True:
                 print(self.term.clear())
-                print(self.term.bold("Select a player file:\n"))
+                print(logo)
                 for i, file in enumerate(player_files):
                     file_name = os.path.basename(file)
                     if i == index:
-                        print(self.term.reverse(f"> {file_name}"))
+                        print(self.term.move(5+i,45) + self.term.reverse(f"> {file_name}"))
                     else:
-                        print(f"  {file_name}")
+                        print(self.term.move(5+i,45) + f"  {file_name}")
 
                 key = self.term.inkey()
                 if key.name == "KEY_UP":
@@ -185,7 +185,7 @@ class Display:
                     if item_index < len(parsed_data[selected_items]):
                         item = parsed_data[selected_items][item_index]
                         if i == 0:
-                            item_text = f"{color}{self.display_name(item.prefix_name)+' ' if item.prefix_name != ''else ''}{self.display_name(item.name)} x{item.stack}{CEND}"
+                            item_text = f"{color}{self.display_name(item.prefix_name)+' ' if item.prefix_name != ''else ''}{self.display_name(item.name)} x{item.stack}{CEND} [{CBLUE2}enter{CEND}] Edit"
                         else:
                             item_text = f"{self.term.color_rgb(item.color.r,item.color.g,item.color.b)}{self.display_name(item.prefix_name)+' ' if item.prefix_name != ''else ''}{self.display_name(item.name)} {CYELLOW2}x{item.stack}{CEND}"
 

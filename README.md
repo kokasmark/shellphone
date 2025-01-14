@@ -14,4 +14,5 @@ A Terminal based **Terraria** Character Editor.
 ### Planned Feautures
 - Hot reloading character by calling LoadPlayer from Terraria.exe
 
-![Screenshot](image.png)
+![Screenshot](image2.png)
+![Screenshot](image1.png)
