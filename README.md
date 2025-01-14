@@ -1,4 +1,4 @@
-![Shellphone](banner.png)
+![Shellphone](./images/banner.png)
 
 A Terminal based **Terraria** Character Editor.
 
@@ -14,5 +14,5 @@ A Terminal based **Terraria** Character Editor.
 ### Planned Feautures
 - Hot reloading character(if possible, i will see)
 
-![Screenshot](image2.png)
-![Screenshot](image1.png)
+![Screenshot](./images/image2.png)
+![Screenshot](./images/image1.png)
