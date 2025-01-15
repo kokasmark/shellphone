@@ -132,6 +132,7 @@ class Display:
         selected_item = 0
         with self.term.fullscreen(), self.term.hidden_cursor(),self.term.cbreak():
             clothing = ["hairColor", "skinColor", "eyeColor", "shirtColor", "underShirtColor", "pantsColor", "shoeColor"]
+
             for i, line in enumerate(self.character):
                 for ii, c in enumerate(line):
                     color_index = self.color_map[i][ii]
@@ -139,8 +140,13 @@ class Display:
                         color = parsed_data[clothing[int(color_index)]]
                     else:
                         color = {"r": 255, "g": 255, "b": 255}
-                    r, g, b = color['r'], color['g'], color['b']
-                    print(self.term.move(i+3, ii) + self.term.color_rgb(r,g,b) + c + self.term.normal)
+                    
+                    shading_factor = (1-(ii/len(line))) + 0.2
+                    r = int(color['r'] * shading_factor)
+                    g = int(color['g'] * shading_factor)
+                    b = int(color['b'] * shading_factor)
+                    
+                    print(self.term.move(i + 3, ii) + self.term.color_rgb(r, g, b) + c + self.term.normal)
             info_box_x = len(self.character[0]) + 2
             current_y = 2
             print(self.term.move(current_y, info_box_x) + f"╭─ Stats {'─' * 42}╮")
