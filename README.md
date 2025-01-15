@@ -3,6 +3,7 @@
 A Terminal based **Terraria** Character Editor.
 
 ### Feautures
+- Player sprite render with the players colors(With the default clothing and hair)
 - Player base stats
 - Inventory
 - Armor/Dyes/Accessories
