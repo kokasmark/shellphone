@@ -10,7 +10,6 @@ import parser
 
 from PIL import Image
 
-import random
 
 color_map ="""                                                                                
                                                                                 
@@ -68,45 +67,66 @@ class Display:
         result = re.sub(r'([a-z0-9])([A-Z])', r'\1 \2', text)
         return result
 
-    def find_player_files(self):
-        """Searches for .plr files in the user's Terraria player directory."""
-        documents_folder = os.path.join(os.path.expanduser("~"), "Documents")
-        terraria_player_folder = os.path.join(documents_folder, "My Games", "Terraria", "Players")
-        tmodloader_player_folder = os.path.join(documents_folder, "My Games", "Terraria", "tModLoader", "Players")
-        if not os.path.exists(terraria_player_folder):
-            print("Terraria player folder not found!")
-            return []
 
-        return [os.path.join(terraria_player_folder, f) for f in os.listdir(terraria_player_folder) if f.endswith(".plr") or f.endswith(".bak")] + [
-                os.path.join(tmodloader_player_folder, f) for f in os.listdir(tmodloader_player_folder) if f.endswith(".plr") or f.endswith(".bak")
-            ]
-
-    def render_select_player(self):
-        """Renders the .plr file selection menu and returns the selected file path."""
-        player_files = self.find_player_files()
-        if not player_files:
-            print("No .plr files found!")
-            return None
-
+    def render_player_select(self, player_files, parsers):
+        deserialized_data = []
+        for parser in parsers:
+            deserialized_data.append(parser.deserialized)
         index = 0
+        visible_count = 3
+
+        def draw_rounded_box(x, y, width, height, border_color, inner_color=None):
+            for i in range(height):
+                for j in range(width):
+                    if i == 0 and j == 0:
+                        char = "╭"
+                    elif i == 0 and j == width - 1:
+                        char = "╮"
+                    elif i == height - 1 and j == 0:
+                        char = "╰"
+                    elif i == height - 1 and j == width - 1:
+                        char = "╯"
+                    elif i == 0 or i == height - 1:
+                        char = "─"
+                    elif j == 0 or j == width - 1:
+                        char = "│"
+                    else:
+                        char = " "
+                    color = border_color if char != " " else inner_color
+                    if color:
+                        print(self.term.move(y + i, x + j) + color + char + self.term.normal)
+
+
         with self.term.fullscreen(), self.term.cbreak(), self.term.hidden_cursor():
             while True:
                 print(self.term.clear())
-                print(logo)
-                for i, file in enumerate(player_files):
-                    file_name = os.path.basename(file)
-                    if i == index:
-                        print(self.term.move(5+i,45) + self.term.reverse(f"> {file_name}{CRED2}{' This file is a backup file do not edit it if not needed!' if file_name.endswith('.bak') else ''}{CEND}"))
-                    else:
-                        print(self.term.move(5+i,45) + f"  {file_name}")
+                start = index
+                end = min(index + visible_count, len(deserialized_data))
 
-                key = self.term.inkey()
-                if key.name == "KEY_UP":
-                    index = (index - 1) % len(player_files)
-                elif key.name == "KEY_DOWN":
-                    index = (index + 1) % len(player_files)
+                for i, data in enumerate(deserialized_data[start:end]):
+                    x = i * 80 
+                    y = 3
+
+                    self.render_player(data, x, y)
+                    name = data.get("name", "Unknown")
+                    name_box_width = len(name) + 4
+                    name_box_x = x + 40 - name_box_width // 2
+                    name_box_y = y + 38
+                    draw_rounded_box(name_box_x, name_box_y, name_box_width, 3, self.term.color_rgb(200, 200, 200))
+                    print(self.term.move(name_box_y + 1, name_box_x + 2) + name)
+
+                draw_rounded_box(15, 1, 45, 45, self.term.color_rgb(255, 255, 255))
+                instructions = f"{CBLUE2}←/→{CEND} Cycle | {CBLUE2}enter{CEND} Select"
+                self.print_instructions(instructions, 15+5, 50)
+                key = self.term.inkey(timeout=None)
+                if key.name == "KEY_LEFT":
+                    index = max(index - 1, 0)
+                elif key.name == "KEY_RIGHT":
+                    index = min(index + 1, len(deserialized_data))
                 elif key.name == "KEY_ENTER" or key == "\n":
-                    return player_files[index]
+                    return (parsers[index],player_files[index])
+                elif key.name == "KEY_ESCAPE":
+                    return None
 
     def print_instructions(self, content, x, y):
         box_width = self.visible_length(content)+6
@@ -121,7 +141,29 @@ class Display:
         print(self.term.move(y - 2, x-5) + f"│{padded_content}│")
 
         print(self.term.move(y - 1, x-5) + f"╰{'─' * (box_width - 2)}╯")
-        
+    
+    def render_player(self, parsed_data, x, y):
+        clothing = ["hairColor", "skinColor", "eyeColor", "shirtColor", "underShirtColor", "pantsColor", "shoeColor"]
+
+        for i, line in enumerate(self.character):
+            buffer = ""
+            for ii, c in enumerate(line):
+                color_index = self.color_map[i][ii]
+                if color_index.isnumeric() and int(color_index) < len(clothing):
+                    color = parsed_data[clothing[int(color_index)]]
+                else:
+                    color = {"r": 255, "g": 255, "b": 255}
+                
+                shading_factor = (1 - (ii / len(line))) + 0.2
+                r = int(color['r'] * shading_factor)
+                g = int(color['g'] * shading_factor)
+                b = int(color['b'] * shading_factor)
+
+                buffer += self.term.color_rgb(r, g, b) + c + self.term.normal
+
+            print(self.term.move(i + y, x) + buffer)
+
+
     def render(self, parsed_data):
         print(self.term.clear())
         current_item_index = 0
@@ -131,22 +173,9 @@ class Display:
         item_colors = [CBLUE,CGREY,CVIOLET2,CRED2,CYELLOW2,CBEIGE2]
         selected_item = 0
         with self.term.fullscreen(), self.term.hidden_cursor(),self.term.cbreak():
-            clothing = ["hairColor", "skinColor", "eyeColor", "shirtColor", "underShirtColor", "pantsColor", "shoeColor"]
 
-            for i, line in enumerate(self.character):
-                for ii, c in enumerate(line):
-                    color_index = self.color_map[i][ii]
-                    if color_index.isnumeric() and int(color_index) < len(clothing):
-                        color = parsed_data[clothing[int(color_index)]]
-                    else:
-                        color = {"r": 255, "g": 255, "b": 255}
-                    
-                    shading_factor = (1-(ii/len(line))) + 0.2
-                    r = int(color['r'] * shading_factor)
-                    g = int(color['g'] * shading_factor)
-                    b = int(color['b'] * shading_factor)
-                    
-                    print(self.term.move(i + 3, ii) + self.term.color_rgb(r, g, b) + c + self.term.normal)
+            self.render_player(parsed_data,0,3)
+
             info_box_x = len(self.character[0]) + 2
             current_y = 2
             print(self.term.move(current_y, info_box_x) + f"╭─ Stats {'─' * 42}╮")

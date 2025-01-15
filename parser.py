@@ -492,6 +492,7 @@ class PlayerParser:
 
 
         self.parsed_bytes = self.offset
+        self.deserialized = data
         return data
     
     def serialize(self, data):

@@ -3,6 +3,7 @@
 A Terminal based **Terraria** Character Editor.
 
 ### Feautures
+- Simple menu for player file selection(Automatically pulled from the player file locations)
 - Player sprite render with the players colors(With the default clothing and hair)
 - Player base stats
 - Inventory
@@ -16,4 +17,5 @@ A Terminal based **Terraria** Character Editor.
 ### Planned Feautures
 - Hot reloading character(if possible, i will see)
 
-![Screenshot](./images/image.png)
+![Screenshot](./images/menu.png)
+![Screenshot](./images/editor.png)
