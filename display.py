@@ -201,7 +201,11 @@ class Display:
             padding = 48 - self.visible_length(mana_text)
             mana_text = f"{mana_text}{' ' * padding}"
             print(self.term.move(current_y + 4, info_box_x) + f"│ {mana_text} │")
-            print(self.term.move(current_y + 5, info_box_x) + f"╰{'─' * 50}╯")
+            deaths_text = f"{CRED2}x{parsed_data['numberOfDeathsPVE']+parsed_data['numberOfDeathsPVP']}{CEND} deaths"
+            padding = 48 - self.visible_length(deaths_text)
+            deaths_text = f"{deaths_text}{' ' * padding}"
+            print(self.term.move(current_y + 5, info_box_x) + f"│ {deaths_text} │")
+            print(self.term.move(current_y + 6, info_box_x) + f"╰{'─' * 50}╯")
             
             buffs_box_width = 50 
             current_y += 7
