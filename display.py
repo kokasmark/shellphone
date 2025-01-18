@@ -24,7 +24,7 @@ color_map ="""
                     0000000000000000000000000000000000000                       
                        0000000000000000000001100000000000                       
                        0000000000000000000001100000000000                       
-                    00000000000000001100772211111   00                          
+                    00000000000000001111772211111   00                          
                        00000000000111111772211111                               
                          00000000011111111111111111                             
                           00000000111111111111111                            
@@ -105,7 +105,7 @@ class Display:
 
                 for i, data in enumerate(deserialized_data[start:end]):
                     x = i * 80 
-                    y = 3
+                    y = 5
 
                     self.render_player(data, x, y)
                     name = data.get("name", "Unknown")
@@ -115,9 +115,18 @@ class Display:
                     draw_rounded_box(name_box_x, name_box_y, name_box_width, 3, self.term.color_rgb(200, 200, 200))
                     print(self.term.move(name_box_y + 1, name_box_x + 2) + name)
 
-                draw_rounded_box(15, 1, 45, 45, self.term.color_rgb(255, 255, 255))
+                    name = "tModLoader" if ("tModLoader" in parsers[i+index].file) else "Terraria"
+
+                    name_box_width = len(name) + 4
+                    name_box_x = x + 40 - name_box_width // 2
+                    name_box_y = y + 41
+                    draw_rounded_box(name_box_x, name_box_y, name_box_width, 3, self.term.color_rgb(200, 200, 200))
+                    print(self.term.move(name_box_y + 1, name_box_x + 2) + name)
+
+
+                draw_rounded_box(15, y-2, 45, 48, self.term.color_rgb(255, 255, 255))
                 instructions = f"{CBLUE2}←/→{CEND} Cycle | {CBLUE2}enter{CEND} Select"
-                self.print_instructions(instructions, 15+5, 50)
+                self.print_instructions(instructions, 15+5, y+50)
                 key = self.term.inkey(timeout=None)
                 if key.name == "KEY_LEFT":
                     index = max(index - 1, 0)

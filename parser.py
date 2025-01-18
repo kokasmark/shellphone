@@ -207,11 +207,12 @@ class Buff:
         return f"{minutes}:{seconds:{0}<2}"
     
 class PlayerParser:
-    def __init__(self, data):
+    def __init__(self, data,file):
         self.data = data
         self.offset = 0
         self.parsed_bytes = 0
         self.output_stream = BytesIO()
+        self.file = file
 
     def read_int32(self):
         value = struct.unpack_from('<i', self.data, self.offset)[0]

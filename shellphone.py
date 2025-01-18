@@ -54,7 +54,7 @@ def render_select_player(display):
     parsers = []
     for file in player_files:
         decrypted_data = decrypt_file(file)
-        parser = PlayerParser(decrypted_data)
+        parser = PlayerParser(decrypted_data,file)
         parser.deserialize()
         parsers.append(parser)
 
